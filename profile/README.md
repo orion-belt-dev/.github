@@ -30,9 +30,11 @@ Orion Belt is an open-source SSH access gateway you run yourself. An agent on ea
 | Just-in-time access with approval | Built in, also from Slack, Discord, Teams | Built in | Rare |
 | What you operate | One gateway and PostgreSQL | A platform | A jump host |
 
-## Run it
+## Get started
 
-You need Docker. The script generates its own secrets, starts a gateway, connects a demo machine and prints a sign-in link.
+### Try it on your laptop
+
+You need Docker: Docker Desktop on macOS and Windows, or Docker Engine with the Compose plugin on Linux. The script generates its own secrets, starts a gateway, connects a demo machine and prints a sign-in link.
 
 ```bash
 git clone https://github.com/orion-belt-dev/orion-belt.git
@@ -42,11 +44,150 @@ cd orion-belt
 
 1. Open **Machines**, choose **lab-1** and run a few commands in the web terminal.
 2. Open **Sessions** and play back what you just did.
-3. From your own terminal: `./bin/osh -c client.yaml root@lab-1`. Plain OpenSSH works through the gateway too.
+3. From your own terminal: `./bin/osh -c client.yaml root@lab-1`
 
-For a real server, install the gateway with deb, rpm or apk packages or a one-line installer: [server setup](https://orion-belt.dev/docs/quickstart/server).
+Stop it with `./scripts/docker-quickstart.sh --down`.
 
 <img src="https://raw.githubusercontent.com/orion-belt-dev/orion-belt/master/assets/orion-belt-in-action.gif" alt="The Orion Belt console: opening a web terminal on a machine, then replaying the recorded session." width="100%">
+
+### Install on a server
+
+The quickest way is the installer. It picks the right package for your distribution, can install PostgreSQL for you, writes `/etc/orion-belt/server.yaml`, starts the service and creates the first admin.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/orion-belt-dev/orion-belt/master/scripts/install-server.sh | sudo bash
+```
+
+To install the packages yourself, pick your system below. Every release has packages for amd64 and arm64. There is no APT or DNF repository yet, so you download the package and install the file.
+
+<details>
+<summary><b>Debian and Ubuntu</b> (apt)</summary>
+
+```bash
+VER=$(curl -fsSL https://orion-belt-dev.github.io/packages/VERSION)
+ARCH=$(dpkg --print-architecture)
+curl -fLO "https://github.com/orion-belt-dev/orion-belt/releases/download/v$VER/orion-belt_${VER}_linux_${ARCH}.deb"
+sudo apt install "./orion-belt_${VER}_linux_${ARCH}.deb"
+```
+</details>
+
+<details>
+<summary><b>RHEL, Rocky, AlmaLinux and Fedora</b> (dnf)</summary>
+
+```bash
+VER=$(curl -fsSL https://orion-belt-dev.github.io/packages/VERSION)
+ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+curl -fLO "https://github.com/orion-belt-dev/orion-belt/releases/download/v$VER/orion-belt_${VER}_linux_${ARCH}.rpm"
+sudo dnf install "./orion-belt_${VER}_linux_${ARCH}.rpm"
+```
+
+On openSUSE, install the same file with `sudo zypper install ./orion-belt_${VER}_linux_${ARCH}.rpm`.
+</details>
+
+<details>
+<summary><b>Alpine</b> (apk, OpenRC)</summary>
+
+```bash
+VER=$(curl -fsSL https://orion-belt-dev.github.io/packages/VERSION)
+ARCH=$(uname -m | sed 's/x86_64/amd64/; s/aarch64/arm64/')
+curl -fLO "https://github.com/orion-belt-dev/orion-belt/releases/download/v$VER/orion-belt_${VER}_linux_${ARCH}.apk"
+sudo apk add --allow-untrusted "./orion-belt_${VER}_linux_${ARCH}.apk"
+```
+
+`--allow-untrusted` is needed because the package is a local file, not from a signed index. Check its signature first (see below). Start it with `sudo rc-update add orion-belt-server && sudo rc-service orion-belt-server start`.
+</details>
+
+<details>
+<summary><b>Arch Linux</b> (PKGBUILD)</summary>
+
+```bash
+git clone https://github.com/orion-belt-dev/orion-belt.git
+cd orion-belt/packaging/arch
+makepkg -si   # set pkgver to the release you want first
+```
+</details>
+
+<details>
+<summary><b>Check the signature</b> (any Linux)</summary>
+
+Releases are signed by `Orion Belt Packaging <maintainers@orion-belt.dev>`.
+
+```bash
+B="https://github.com/orion-belt-dev/orion-belt/releases/download/v$VER"
+curl -fLO "$B/checksums.txt" -fLO "$B/checksums.txt.sig"
+curl -fsSL https://raw.githubusercontent.com/orion-belt-dev/orion-belt/master/packaging/keys/orion-belt.asc | gpg --import
+gpg --verify checksums.txt.sig checksums.txt
+sha256sum --ignore-missing -c checksums.txt
+```
+</details>
+
+Then configure and start the gateway (systemd):
+
+```bash
+sudoedit /etc/orion-belt/server.yaml        # database URL, JWT secret, server.public_url
+sudo systemctl enable --now orion-belt-server
+sudo -u orionbelt orion-belt-server -c /etc/orion-belt/server.yaml setup   # creates the first admin
+```
+
+**Add your servers.** In the console, open **Add agent** and choose **Generate install script**. Run the script on the server: it installs `orion-belt-agent`, writes its config and starts it. The agent connects out to the gateway on port 2222, so the server needs no inbound rule. To do it by hand, see [Add agents](https://github.com/orion-belt-dev/orion-belt/blob/master/docs/SETUP.md#3-add-agents).
+
+### Install the clients
+
+You don't need them: any OpenSSH client works, including the one built into Windows 10 and 11. `osh`, `ocp` and `oadmin` add sign-in, file copy, access requests and admin commands.
+
+<details>
+<summary><b>Linux</b></summary>
+
+Same steps as the server packages above, with the `orion-belt-tools` package:
+
+```bash
+curl -fLO "https://github.com/orion-belt-dev/orion-belt/releases/download/v$VER/orion-belt-tools_${VER}_linux_${ARCH}.deb"
+sudo apt install "./orion-belt-tools_${VER}_linux_${ARCH}.deb"   # or the .rpm / .apk file
+```
+</details>
+
+<details>
+<summary><b>macOS</b> (Apple silicon and Intel)</summary>
+
+```bash
+VER=$(curl -fsSL https://orion-belt-dev.github.io/packages/VERSION)
+ARCH=$(uname -m | sed 's/x86_64/amd64/')
+curl -fL "https://github.com/orion-belt-dev/orion-belt/releases/download/v$VER/orion-belt_tools_${VER}_darwin_${ARCH}.tar.gz" | tar xz osh ocp oadmin
+sudo mv osh ocp oadmin /usr/local/bin/
+```
+</details>
+
+### Everyday examples
+
+The gateway listens for SSH on port 2222. These examples use `orion.example.com` as the gateway and `web-01` as a server.
+
+```bash
+# Open a shell on web-01 with plain OpenSSH, as gateway user alice
+ssh -p 2222 alice+web-01@orion.example.com
+
+# Run one command on web-01 as the remote user bob
+ssh -p 2222 'alice+bob%web-01@orion.example.com' uptime
+
+# Sign in once with osh; it reads the gateway from ~/.orion-belt/client.yaml
+osh login
+osh web-01
+
+# Copy a file to and from web-01
+ocp ./app.conf web-01:/etc/app/app.conf
+ocp web-01:/var/log/app.log ./
+
+# No access to db-01? Ask for one hour, with a reason
+osh --request-access db-01 --reason "Rotate the TLS certificate" --duration 3600
+
+# Operators: review and approve requests (also possible from the console or chat)
+oadmin requests list
+oadmin requests approve <request-id>
+
+# Give alice standing access to web-01
+oadmin permissions grant --user alice --machine web-01
+```
+
+More in the [client CLI reference](https://github.com/orion-belt-dev/orion-belt/blob/master/docs/CLIENT-CLI.md) and [OpenSSH guide](https://github.com/orion-belt-dev/orion-belt/blob/master/docs/openssh-clients.md).
 
 ## What ships today
 
