@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="440" viewBox="0 0 1280 440" role="img" aria-labelledby="title desc">
+  <title id="title">Orion Belt</title>
+  <desc id="desc">Three stars in a line, like Orion's Belt: your laptop, the Orion Belt gateway and an agent on your server. The agent connects out to the gateway through a closed firewall, so the server needs no open inbound port. Your SSH session passes through the gateway, which records it.</desc>
+  <style>
+    .bg { fill: #f4f8fc; }
+    .ink { fill: #08111f; }
+    .muted { fill: #4b5a70; }
+    .star { fill: #08111f; }
+    .halo { fill: #146ef5; }
+    .link { stroke: #146ef5; }
+    .wall { stroke: #9fb0c6; }
+    .rec { fill: #dc2626; }
+    text { font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+
+    /* The tunnel's dashes flow from the agent towards the gateway: it dials out. */
+    .tunnel { animation: dial 1.6s linear infinite; }
+    @keyframes dial { from { stroke-dashoffset: 28; } to { stroke-dashoffset: 0; } }
+
+    /* One session travels laptop, gateway, agent. */
+    .packet { animation: session 4.8s ease-in-out infinite; }
+    @keyframes session {
+      0%, 8%   { transform: translate(240px, 330px); opacity: 0; }
+      12%      { opacity: 1; }
+      42%, 50% { transform: translate(640px, 300px); opacity: 1; }
+      84%      { transform: translate(1040px, 270px); opacity: 1; }
+      92%, 100% { transform: translate(1040px, 270px); opacity: 0; }
+    }
+    .recording { animation: rec 2.4s ease-in-out infinite; }
+    @keyframes rec { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tunnel, .recording { animation: none; }
+      .packet { animation: none; transform: translate(640px, 300px); }
+    }
+  </style>
+
+  <rect class="bg" width="1280" height="440"/>
+
+  <g class="star" opacity=".32">
+    <circle cx="708" cy="48" r="1.1"/><circle cx="782" cy="96" r=".8"/><circle cx="846" cy="34" r="1.3"/>
+    <circle cx="918" cy="128" r=".9"/><circle cx="964" cy="62" r="1.1"/><circle cx="1032" cy="140" r=".8"/>
+    <circle cx="1088" cy="40" r="1.2"/><circle cx="1140" cy="104" r=".9"/><circle cx="1196" cy="58" r="1.4"/>
+    <circle cx="1232" cy="164" r=".8"/><circle cx="1004" cy="196" r=".9"/><circle cx="1176" cy="214" r="1"/>
+    <circle cx="860" cy="182" r=".8"/><circle cx="742" cy="168" r="1"/><circle cx="1260" cy="18" r=".9"/>
+    <circle cx="120" cy="226" r=".8"/><circle cx="420" cy="230" r="1"/><circle cx="64" cy="392" r=".9"/>
+    <circle cx="470" cy="412" r=".8"/><circle cx="1220" cy="396" r="1.1"/><circle cx="1150" cy="330" r=".8"/>
+  </g>
+
+  <text class="ink" x="72" y="108" font-size="64" font-weight="700" letter-spacing="-1.2">Orion Belt</text>
+  <text class="muted" x="74" y="156" font-size="28">Self-hosted SSH access. Your servers dial out; nothing dials in.</text>
+
+  <!-- laptop to gateway -->
+  <line class="link" x1="240" y1="330" x2="640" y2="300" stroke-width="2" opacity=".55"/>
+  <!-- agent to gateway, drawn from the agent so the dashes move outward -->
+  <line class="link tunnel" x1="1040" y1="270" x2="640" y2="300" stroke-width="2.5" stroke-dasharray="10 4"/>
+
+  <!-- firewall -->
+  <line class="wall" x1="860" y1="226" x2="860" y2="372" stroke-width="3" stroke-dasharray="3 7" stroke-linecap="round"/>
+  <text class="muted mono" x="860" y="212" font-size="18" text-anchor="middle">inbound: closed</text>
+
+  <circle class="halo" cx="240" cy="330" r="18" opacity=".16"/>
+  <circle class="star" cx="240" cy="330" r="6"/>
+  <circle class="halo" cx="640" cy="300" r="30" opacity=".2"/>
+  <circle class="star" cx="640" cy="300" r="9.5"/>
+  <circle class="halo" cx="1040" cy="270" r="18" opacity=".16"/>
+  <circle class="star" cx="1040" cy="270" r="6"/>
+
+  <circle class="halo packet" r="5"/>
+
+  <g class="recording">
+    <circle class="rec" cx="676" cy="262" r="5"/>
+    <text class="ink mono" x="688" y="267" font-size="16" font-weight="600">REC</text>
+  </g>
+
+  <text class="ink" x="240" y="378" font-size="24" font-weight="600" text-anchor="middle">You</text>
+  <text class="muted mono" x="240" y="406" font-size="19" text-anchor="middle">ssh alice+web-01@gateway</text>
+
+  <text class="ink" x="640" y="352" font-size="24" font-weight="600" text-anchor="middle">Gateway</text>
+  <text class="muted" x="640" y="380" font-size="20" text-anchor="middle">checks access, asks for approval,</text>
+  <text class="muted" x="640" y="406" font-size="20" text-anchor="middle">records every session</text>
+
+  <text class="ink" x="1040" y="318" font-size="24" font-weight="600" text-anchor="middle">Agent on web-01</text>
+  <text class="muted" x="1040" y="346" font-size="20" text-anchor="middle">connects out over reverse SSH</text>
+</svg>
